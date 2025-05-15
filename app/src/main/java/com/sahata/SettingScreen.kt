@@ -1,42 +1,69 @@
 package com.sahata
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
+import android.content.Context
+import android.content.SharedPreferences
+import android.media.AudioManager
+import android.os.Bundle
+import android.widget.ImageView
+import android.widget.SeekBar
+import androidx.appcompat.app.AppCompatActivity
 
-@Composable
-fun SettingScreen(
-    backgroundResId: Int,
-    fieldResId: Int
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
-        // Background image
-        Image(
-            painter = painterResource(id = backgroundResId),
-            contentDescription = "Setting Background",
-            modifier = Modifier.fillMaxSize()
-        )
+class SettingScreen : AppCompatActivity() {
 
-        // Centered field
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = fieldResId),
-                contentDescription = "Setting Field",
-                modifier = Modifier.size(340.dp) // Adjust size as needed
-            )
+    private lateinit var sharedPreferences: SharedPreferences
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_setting)
+
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        sharedPreferences = getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM)
+        val savedVolume = sharedPreferences.getInt("system_volume", audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM))
+
+        // Set the saved volume
+        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, savedVolume, 0)
+
+        val seekBar = findViewById<SeekBar>(R.id.setting_barsuara)
+        val volumeDown = findViewById<ImageView>(R.id.setting_suaramin)
+        val volumeUp = findViewById<ImageView>(R.id.setting_suaraplus)
+
+        // Set SeekBar max and current progress
+        seekBar.max = maxVolume
+        seekBar.progress = savedVolume
+
+        // Handle SeekBar changes
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, progress, 0)
+                    saveVolume(progress)
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        // Handle volume down button
+        volumeDown.setOnClickListener {
+            val newVolume = (audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM) - 1).coerceAtLeast(0)
+            audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, newVolume, 0)
+            seekBar.progress = newVolume
+            saveVolume(newVolume)
         }
+
+        // Handle volume up button
+        volumeUp.setOnClickListener {
+            val newVolume = (audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM) + 1).coerceAtMost(maxVolume)
+            audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, newVolume, 0)
+            seekBar.progress = newVolume
+            saveVolume(newVolume)
+        }
+    }
+
+    private fun saveVolume(volume: Int) {
+        sharedPreferences.edit().putInt("system_volume", volume).apply()
     }
 }

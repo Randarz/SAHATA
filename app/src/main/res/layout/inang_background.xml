@@ -1,25 +1,269 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/inang_background">
 
+    <ImageView
+        android:id="@+id/autoplay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.18"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="120dp"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/autoplay"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
     <!-- Example Component: inang_a -->
     <ImageView
         android:id="@+id/inang_a"
-        android:layout_width="12dp"
-        android:layout_height="12dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="3.7dp"
+        android:layout_marginTop="79dp"
         android:src="@drawable/inang_a"
-        android:layout_centerInParent="true"
-        android:scaleType="fitXY" />
+        app:layout_constraintEnd_toStartOf="@+id/inang_ha"
+        app:layout_constraintTop_toTopOf="parent"
+         />
 
-    <!-- Example Component: inang_ha -->
     <ImageView
         android:id="@+id/inang_ha"
-        android:layout_width="12dp"
-        android:layout_height="12dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="3.7dp"
+        android:layout_marginTop="79dp"
         android:src="@drawable/inang_ha"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="16dp"
-        android:layout_centerHorizontal="true" />
+        app:layout_constraintEnd_toStartOf="@+id/inang_ma"
+        app:layout_constraintTop_toTopOf="parent"
+        />
 
-</RelativeLayout>
+    <ImageView
+        android:id="@+id/inang_ma"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="80dp"
+        android:layout_marginTop="79dp"
+        android:src="@drawable/inang_ma"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <ImageView
+        android:id="@+id/inang_na"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="80dp"
+        android:layout_marginTop="79dp"
+        android:src="@drawable/inang_na"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_ra"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="3.7dp"
+        android:layout_marginTop="79dp"
+        android:src="@drawable/inang_ra"
+        app:layout_constraintStart_toEndOf="@+id/inang_na"
+        app:layout_constraintTop_toTopOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_ta"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="3.7dp"
+        android:layout_marginTop="79dp"
+        android:src="@drawable/inang_ta"
+        app:layout_constraintStart_toEndOf="@+id/inang_ra"
+        app:layout_constraintTop_toTopOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_ga"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_ga"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_la"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_la"
+        app:layout_constraintEnd_toStartOf="@+id/inang_ga"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_pa"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_pa"
+        app:layout_constraintEnd_toStartOf="@+id/inang_la"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_sa"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_sa"
+        app:layout_constraintEnd_toStartOf="@+id/inang_pa"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_ja"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_ja"
+        app:layout_constraintStart_toEndOf="@+id/inang_ga"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_da"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_da"
+        app:layout_constraintStart_toEndOf="@+id/inang_ja"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_nga"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginTop="40dp"
+        android:src="@drawable/inang_nga"
+        app:layout_constraintStart_toEndOf="@+id/inang_da"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+
+    <ImageView
+        android:id="@+id/inang_ya"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="80dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/inang_ya"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <ImageView
+        android:id="@+id/inang_nya"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="80dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/inang_nya"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/inang_wa"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="3.7dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/inang_wa"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/inang_ya" />
+
+    <ImageView
+        android:id="@+id/inang_ba"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="3.7dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/inang_ba"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/inang_wa" />
+
+    <ImageView
+        android:id="@+id/inang_i"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="3.7dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/inang_i"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/inang_nya" />
+
+    <ImageView
+        android:id="@+id/inang_u"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="3.7dp"
+        android:layout_marginBottom="40dp"
+        android:src="@drawable/inang_u"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/inang_i" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
