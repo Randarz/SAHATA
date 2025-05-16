@@ -1,13 +1,8 @@
 package com.sahata
 
-import android.animation.ObjectAnimator
-import android.animation.AnimatorSet
-import android.content.Context
-import android.media.MediaPlayer
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
-import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.*
 
 @Composable
@@ -37,6 +35,32 @@ fun BelajarScreen(
     var showNotice by remember { mutableStateOf(true) }
     val coroutineScope = rememberCoroutineScope()
     var isAutoplaying by remember { mutableStateOf(false) }
+    var wasAutoplayingBeforePause by remember { mutableStateOf(false) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = object : DefaultLifecycleObserver {
+            override fun onPause(owner: LifecycleOwner) {
+                if (isAutoplaying) {
+                    wasAutoplayingBeforePause = true
+                    stopAutoplay(coroutineScope)
+                    isAutoplaying = false
+                }
+            }
+
+            override fun onResume(owner: LifecycleOwner) {
+                if (wasAutoplayingBeforePause) {
+                    wasAutoplayingBeforePause = false
+                    isAutoplaying = true
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -102,14 +126,7 @@ fun BelajarScreen(
                     view.findViewById<ImageView>(R.id.autoplay)?.setOnClickListener {
                         if (!isAutoplaying) {
                             isAutoplaying = true
-                            coroutineScope.launch {
-                                for ((imageViewId, soundResId) in soundMap) {
-                                    if (!isAutoplaying) break
-                                    val button = view.findViewById<ImageView>(imageViewId)
-                                    playSoundSequentiallyWithAnimation(context, soundResId, soundEffectsVolume, button)
-                                }
-                                isAutoplaying = false
-                            }
+                            startAutoplay(coroutineScope, soundMap, context, view, currentVolume)
                         } else {
                             stopAutoplay(coroutineScope)
                             isAutoplaying = false
@@ -166,39 +183,4 @@ fun BelajarScreen(
             }
         }
     }
-}
-
-private suspend fun playSoundSequentiallyWithAnimation(context: Context, soundResId: Int, volume: Float, button: View) {
-    val mediaPlayer = MediaPlayer.create(context, soundResId)
-    try {
-        mediaPlayer.setVolume(volume, volume)
-        mediaPlayer.start()
-        animateButton(button, mediaPlayer.duration.toLong())
-        delay(mediaPlayer.duration.toLong())
-    } finally {
-        mediaPlayer.release()
-    }
-}
-
-private fun playSoundWithAnimation(context: Context, soundResId: Int, volume: Float, button: View) {
-    val mediaPlayer = MediaPlayer.create(context, soundResId)
-    mediaPlayer.setVolume(volume, volume)
-    mediaPlayer.setOnCompletionListener { it.release() }
-    mediaPlayer.start()
-    animateButton(button, mediaPlayer.duration.toLong())
-}
-
-private fun stopAutoplay(coroutineScope: CoroutineScope) {
-    coroutineScope.coroutineContext.cancelChildren()
-}
-
-private fun animateButton(view: View, duration: Long) {
-    val scaleX = ObjectAnimator.ofFloat(view, "scaleX", 1f, 1.2f, 1f)
-    val scaleY = ObjectAnimator.ofFloat(view, "scaleY", 1f, 1.2f, 1f)
-    scaleX.duration = duration
-    scaleY.duration = duration
-    val animatorSet = AnimatorSet()
-    animatorSet.playTogether(scaleX, scaleY)
-    animatorSet.interpolator = AccelerateDecelerateInterpolator()
-    animatorSet.start()
 }

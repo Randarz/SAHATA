@@ -1,7 +1,7 @@
 package com.sahata
 
+import android.app.Activity
 import android.content.Context
-import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +10,8 @@ import android.view.WindowInsetsController
 import android.widget.ImageView
 import android.widget.SeekBar
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -80,9 +82,10 @@ class MainActivity : ComponentActivity() {
                     getSuaraVolumeLevel = { suaraVolumeLevel },
                     setSuaraVolumeLevel = {
                         suaraVolumeLevel = it
-                        soundEffectsVolume = suaraVolumeLevel * 0.2f // Update volume dynamically
+                        soundEffectsVolume = suaraVolumeLevel * 0.2f
                     },
-                    soundEffectsVolume = soundEffectsVolume // Pass updated volume
+                    soundEffectsVolume = soundEffectsVolume,
+                    onPlaySoundEffect = { playButtonSound(this, soundEffectsVolume) }
                 )
             }
         }
@@ -138,31 +141,41 @@ fun AppNavigation(
     setMusicVolumeLevel: (Int) -> Unit,
     getSuaraVolumeLevel: () -> Int,
     setSuaraVolumeLevel: (Int) -> Unit,
-    soundEffectsVolume: Float // Pass the updated volume
-) {
+    soundEffectsVolume: Float,
+    onPlaySoundEffect: () -> Unit
+)
+ {
     val navController = rememberNavController()
+    var isLoadingComplete by remember { mutableStateOf(false) }
 
-    NavHost(navController = navController, startDestination = "loading") {
+    NavHost(navController = navController, startDestination = if (isLoadingComplete) "home" else "loading") {
         composable("loading") {
             LoadingScreen(
                 backgroundResId = R.drawable.loading_background,
                 titleResId = R.drawable.loading_title,
                 frameResId = R.drawable.loading_bar
             ) {
-                navController.navigate("home")
+                isLoadingComplete = true
+                navController.navigate("home") {
+                    popUpTo("loading") { inclusive = true }
+                }
             }
         }
         composable("home") {
             HomeScreen(
                 backgroundResId = R.drawable.home_background,
-                belajarResId = R.drawable.home_belajar,
-                bermainResId = R.drawable.home_bermain,
                 settingResId = R.drawable.home_setting,
                 noticeResId = R.drawable.home_notice,
                 onSettingClick = { navController.navigate("setting") },
                 onNoticeClick = { navController.navigate("notice") },
-                onBelajarClick = { navController.navigate("belajar") }
+                onBelajarClick = { navController.navigate("belajar") },
+                onBermainClick = {  } // New callback for Bermain button
             )
+            BackHandler {
+                navController.navigate("exit") {
+                    popUpTo("home") { inclusive = true }
+                }
+            }
         }
         composable("setting") {
             SettingScreen(
@@ -170,7 +183,8 @@ fun AppNavigation(
                 setMusicVolumeLevel = setMusicVolumeLevel,
                 getSuaraVolumeLevel = getSuaraVolumeLevel,
                 setSuaraVolumeLevel = setSuaraVolumeLevel,
-                onBackToHome = { navController.navigate("home") }
+                onBackToHome = { navController.navigate("home") },
+                onNavigateToExit = { navController.navigate("exit") }
             )
         }
         composable("belajar") {
@@ -181,15 +195,50 @@ fun AppNavigation(
                 inangBackResId = R.drawable.inang_back,
                 inangNextResId = R.drawable.inang_next,
                 onBackClick = { navController.popBackStack() },
-                onNextClick = { /* Add navigation logic for the next screen */ },
-                soundEffectsVolume = soundEffectsVolume // Pass the updated volume
+                onNextClick = { navController.navigate("anak") }, // Navigate to AnakScreen
+                soundEffectsVolume = soundEffectsVolume
+            )
+        }
+        composable("anak") {
+            AnakScreen(
+                anakBackgroundLayoutResId = R.layout.anak_background,
+                anakNextResId = R.drawable.anak_next,
+                soundEffectsVolume = soundEffectsVolume,
+                onNextClick = { navController.navigate("maribermain") }
+            )
+        }
+        composable("maribermain") {
+            MariBermainScreen(
+                mariBackgroundLayoutResId = R.layout.mari_background,
+                homeButtonResId = R.drawable.bermain_home,
+                onHomeClick = { navController.navigate("home") }
             )
         }
         composable("notice") {
             NoticeScreen(
-                backgroundResId = R.drawable.background_shade,
-                fieldResId = R.drawable.notice_field
+                onBackToHome = { navController.navigate("home") }
             )
+        }
+        composable("exit") {
+            ExitScreen(
+                onBackToSetting = { navController.navigate("setting") }
+            )
+        }
+    }
+}
+
+@Composable
+fun BackHandler(onBackPressed: () -> Unit) {
+    val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    DisposableEffect(backPressedDispatcher) {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                onBackPressed()
+            }
+        }
+        backPressedDispatcher?.addCallback(callback)
+        onDispose {
+            callback.remove()
         }
     }
 }
@@ -200,7 +249,8 @@ fun SettingScreen(
     setMusicVolumeLevel: (Int) -> Unit,
     getSuaraVolumeLevel: () -> Int,
     setSuaraVolumeLevel: (Int) -> Unit,
-    onBackToHome: () -> Unit
+    onBackToHome: () -> Unit,
+    onNavigateToExit: () -> Unit
 ) {
     AndroidView(
         factory = { context: Context ->
@@ -263,6 +313,56 @@ fun SettingScreen(
             val kembaliButton = view.findViewById<ImageView>(R.id.setting_kembali)
             kembaliButton.setOnClickListener {
                 onBackToHome()
+            }
+
+            val keluarButton = view.findViewById<ImageView>(R.id.setting_keluar)
+            keluarButton.setOnClickListener {
+                onNavigateToExit()
+            }
+
+            view
+        },
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+@Composable
+fun NoticeScreen(
+    onBackToHome: () -> Unit
+) {
+    AndroidView(
+        factory = { context ->
+            val view = View.inflate(context, R.layout.activity_notice, null)
+
+            // Set up the back button (notice_kembali)
+            val backButton = view.findViewById<ImageView>(R.id.notice_kembali)
+            backButton.setOnClickListener {
+                onBackToHome()
+            }
+
+            view
+        },
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+@Composable
+fun ExitScreen(
+    onBackToSetting: () -> Unit
+) {
+    AndroidView(
+        factory = { context ->
+            val view = View.inflate(context, R.layout.activity_exit, null)
+
+            val kembaliButton = view.findViewById<ImageView>(R.id.exit_kembali)
+            kembaliButton.setOnClickListener {
+                onBackToSetting()
+            }
+
+            val keluarButton = view.findViewById<ImageView>(R.id.exit_keluar)
+            keluarButton.setOnClickListener {
+                // Close the app
+                (context as? Activity)?.finishAffinity()
             }
 
             view
@@ -338,4 +438,13 @@ fun LoadingScreen(
             }
         }
     }
+}
+
+fun playButtonSound(context: Context, volume: Float) {
+    val mediaPlayer = MediaPlayer.create(context, R.raw.button)
+    mediaPlayer.setVolume(volume, volume)
+    mediaPlayer.setOnCompletionListener {
+        it.release()
+    }
+    mediaPlayer.start()
 }
