@@ -1,7 +1,6 @@
 package com.sahata
 
 import android.view.LayoutInflater
-import android.view.View
 import android.widget.ImageView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,13 +11,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import kotlinx.coroutines.*
 
 @Composable
 fun BelajarScreen(
@@ -36,8 +35,15 @@ fun BelajarScreen(
     val coroutineScope = rememberCoroutineScope()
     var isAutoplaying by remember { mutableStateOf(false) }
     var wasAutoplayingBeforePause by remember { mutableStateOf(false) }
+    var showMulaianakPopup by remember { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+    val isTablet = screenWidthDp >= 600
+
+    val actualBackgroundResId = if (isTablet) R.drawable.belajar_background_tab else belajarBackgroundResId
 
     DisposableEffect(lifecycleOwner) {
         val observer = object : DefaultLifecycleObserver {
@@ -69,7 +75,7 @@ fun BelajarScreen(
     ) {
         if (showNotice) {
             Image(
-                painter = painterResource(id = belajarBackgroundResId),
+                painter = painterResource(id = actualBackgroundResId),
                 contentDescription = "Belajar Background",
                 modifier = Modifier.fillMaxSize()
             )
@@ -77,11 +83,12 @@ fun BelajarScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
+                val noticeSize = if (isTablet) 650.dp else 500.dp
                 Image(
                     painter = painterResource(id = belajarNoticeResId),
                     contentDescription = "Belajar Notice",
                     modifier = Modifier
-                        .size(500.dp)
+                        .size(noticeSize)
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
@@ -177,8 +184,30 @@ fun BelajarScreen(
                         ) {
                             stopAutoplay(coroutineScope)
                             isAutoplaying = false
-                            onNextClick()
+                            showMulaianakPopup = true
                         }
+                )
+            }
+        }
+
+        if (showMulaianakPopup) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.8f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        showMulaianakPopup = false
+                        onNextClick()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.new_mulaianak),
+                    contentDescription = "Mulai Anak",
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }

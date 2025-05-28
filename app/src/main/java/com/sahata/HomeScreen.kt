@@ -1,5 +1,8 @@
 package com.sahata
 
+import android.content.SharedPreferences
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.media.MediaPlayer
 import android.view.View
 import android.view.animation.AlphaAnimation
@@ -17,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -35,11 +39,15 @@ fun HomeScreen(
     onSettingClick: () -> Unit,
     onNoticeClick: () -> Unit,
     onBelajarClick: () -> Unit,
-    onBermainClick: () -> Unit
+    onBermainClick: () -> Unit,
+    soundEffectsVolume: Float,
+    sharedPreferences: SharedPreferences
 ) {
     val context = LocalContext.current
     val settingAlpha = remember { Animatable(0f) }
     val noticeAlpha = remember { Animatable(0f) }
+
+    var showLockedPopup by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         launch { settingAlpha.animateTo(1f, animationSpec = tween(300)) }
@@ -65,12 +73,15 @@ fun HomeScreen(
         (sin(floatAngle.toDouble()) * 4f).toInt()
     )
 
-    val mediaPlayer = remember { MediaPlayer.create(context, R.raw.button) }
+    fun playSoundEffect(resId: Int) {
+        val player = MediaPlayer.create(context, resId)
+        player.setVolume(soundEffectsVolume, soundEffectsVolume)
+        player.setOnCompletionListener { it.release() }
+        player.start()
+    }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            mediaPlayer.release()
-        }
+    val hasLearned = remember {
+        sharedPreferences.getBoolean("hasLearned", false)
     }
 
     Box(
@@ -107,19 +118,57 @@ fun HomeScreen(
                 bermainButton.postDelayed({ bermainButton.startAnimation(pulse) }, 500)
 
                 belajarButton.setOnClickListener {
-                    mediaPlayer.start()
+                    playSoundEffect(R.raw.button)
                     onBelajarClick()
                 }
 
-                bermainButton.setOnClickListener {
-                    mediaPlayer.start()
-                    onBermainClick()
+                if (hasLearned) {
+                    bermainButton.setOnClickListener {
+                        playSoundEffect(R.raw.button)
+                        onBermainClick()
+                    }
+                } else {
+                    // Apply grayscale filter and disable click
+                    val grayscaleMatrix = ColorMatrix()
+                    grayscaleMatrix.setSaturation(0f)
+                    val filter = ColorMatrixColorFilter(grayscaleMatrix)
+                    bermainButton.colorFilter = filter
+                    bermainButton.alpha = 0.5f
+                    bermainButton.setOnClickListener {
+                        playSoundEffect(R.raw.button)
+                        showLockedPopup = true
+                    }
                 }
 
                 view
             },
             modifier = Modifier.fillMaxSize()
         )
+
+        if (showLockedPopup) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.85f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        showLockedPopup = false
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.sebelum_buttonmain),
+                    contentDescription = "Bermain Locked",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable {
+                            showLockedPopup = false
+                        }
+                )
+            }
+        }
 
         Box(
             modifier = Modifier
@@ -141,7 +190,7 @@ fun HomeScreen(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        mediaPlayer.start()
+                        playSoundEffect(R.raw.button)
                         onSettingClick()
                     }
             )
@@ -167,7 +216,7 @@ fun HomeScreen(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
                     ) {
-                        mediaPlayer.start()
+                        playSoundEffect(R.raw.button)
                         onNoticeClick()
                     }
             )

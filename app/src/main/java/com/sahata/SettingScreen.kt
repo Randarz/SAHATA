@@ -1,70 +1,126 @@
 package com.sahata
 
 import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
-import android.media.AudioManager
-import android.os.Bundle
+import android.media.MediaPlayer
+import android.view.View
 import android.widget.ImageView
 import android.widget.SeekBar
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.layout.fillMaxSize
+import com.sahata.R
 
-class SettingScreen : AppCompatActivity() {
+@Composable
+fun SettingScreen(
+    getMusicVolumeLevel: () -> Int,
+    setMusicVolumeLevel: (Int) -> Unit,
+    getSuaraVolumeLevel: () -> Int,
+    setSuaraVolumeLevel: (Int) -> Unit,
+    soundEffectsVolume: Int,
+    onBackToHome: () -> Unit,
+    onNavigateToExit: () -> Unit
+) {
+    val context = LocalContext.current
 
-    private lateinit var sharedPreferences: SharedPreferences
+    var currentVolume by remember { mutableStateOf(soundEffectsVolume) }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_setting)
+    LaunchedEffect(soundEffectsVolume) {
+        currentVolume = soundEffectsVolume
+    }
 
-        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        sharedPreferences = getSharedPreferences("AppSettings", Context.MODE_PRIVATE)
+    fun playSound(resId: Int) {
+        val mediaPlayer = MediaPlayer.create(context, resId)
+        mediaPlayer.setVolume(currentVolume / 5f, currentVolume / 5f)
+        mediaPlayer.setOnCompletionListener { it.release() }
+        mediaPlayer.start()
+    }
 
-        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM)
-        val savedVolume = sharedPreferences.getInt("system_volume", audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM))
+    AndroidView(
+        factory = {
+            val view = View.inflate(it, R.layout.activity_setting, null)
 
-        // Set the saved volume
-        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, savedVolume, 0)
+            val musicBar = view.findViewById<SeekBar>(R.id.setting_barmusik)
+            val musicDown = view.findViewById<ImageView>(R.id.setting_musikmin)
+            val musicUp = view.findViewById<ImageView>(R.id.setting_musikplus)
 
-        val seekBar = findViewById<SeekBar>(R.id.setting_barsuara)
-        val volumeDown = findViewById<ImageView>(R.id.setting_suaramin)
-        val volumeUp = findViewById<ImageView>(R.id.setting_suaraplus)
+            val suaraBar = view.findViewById<SeekBar>(R.id.setting_barsuara)
+            val suaraDown = view.findViewById<ImageView>(R.id.setting_suaramin)
+            val suaraUp = view.findViewById<ImageView>(R.id.setting_suaraplus)
 
-        // Set SeekBar max and current progress
-        seekBar.max = maxVolume
-        seekBar.progress = savedVolume
+            musicBar.max = 5
+            musicBar.progress = getMusicVolumeLevel()
+            musicBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        setMusicVolumeLevel(progress)
+                        // No sound here
+                    }
+                }
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            })
 
-        // Handle SeekBar changes
-        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, progress, 0)
-                    saveVolume(progress)
+            musicDown.setOnClickListener {
+                if (getMusicVolumeLevel() > 0) {
+                    setMusicVolumeLevel(getMusicVolumeLevel() - 1)
+                    musicBar.progress = getMusicVolumeLevel()
+                    playSound(R.raw.down)
                 }
             }
 
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
+            musicUp.setOnClickListener {
+                if (getMusicVolumeLevel() < 5) {
+                    setMusicVolumeLevel(getMusicVolumeLevel() + 1)
+                    musicBar.progress = getMusicVolumeLevel()
+                    playSound(R.raw.up)
+                }
+            }
 
-        // Handle volume down button
-        volumeDown.setOnClickListener {
-            val newVolume = (audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM) - 1).coerceAtLeast(0)
-            audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, newVolume, 0)
-            seekBar.progress = newVolume
-            saveVolume(newVolume)
-        }
+            suaraBar.max = 5
+            suaraBar.progress = getSuaraVolumeLevel()
+            suaraBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        setSuaraVolumeLevel(progress)
+                        // No sound here
+                    }
+                }
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            })
 
-        // Handle volume up button
-        volumeUp.setOnClickListener {
-            val newVolume = (audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM) + 1).coerceAtMost(maxVolume)
-            audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, newVolume, 0)
-            seekBar.progress = newVolume
-            saveVolume(newVolume)
-        }
-    }
+            suaraDown.setOnClickListener {
+                if (getSuaraVolumeLevel() > 0) {
+                    setSuaraVolumeLevel(getSuaraVolumeLevel() - 1)
+                    suaraBar.progress = getSuaraVolumeLevel()
+                    playSound(R.raw.down)
+                }
+            }
 
-    private fun saveVolume(volume: Int) {
-        sharedPreferences.edit().putInt("system_volume", volume).apply()
-    }
+            suaraUp.setOnClickListener {
+                if (getSuaraVolumeLevel() < 5) {
+                    setSuaraVolumeLevel(getSuaraVolumeLevel() + 1)
+                    suaraBar.progress = getSuaraVolumeLevel()
+                    playSound(R.raw.up)
+                }
+            }
+
+            val kembaliButton = view.findViewById<ImageView>(R.id.setting_kembali)
+            kembaliButton.setOnClickListener {
+                playSound(R.raw.button)
+                onBackToHome()
+            }
+
+            val keluarButton = view.findViewById<ImageView>(R.id.setting_keluar)
+            keluarButton.setOnClickListener {
+                playSound(R.raw.button)
+                onNavigateToExit()
+            }
+
+            view
+        },
+        modifier = Modifier.fillMaxSize()
+    )
 }

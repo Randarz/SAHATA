@@ -1,0 +1,38 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bermain_background_tab">
+
+    <ImageView
+        android:id="@+id/bermain_tebak"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.27"
+        app:layout_constraintWidth_percent="0.15"
+        android:layout_marginTop="89dp"
+        android:layout_marginEnd="180dp"
+        android:src="@drawable/bermain_tebakaksara"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ImageView
+        android:id="@+id/bermain_petualangan"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.26"
+        app:layout_constraintWidth_percent="0.14"
+        android:layout_marginTop="92dp"
+        android:layout_marginStart="180dp"
+        android:src="@drawable/bermain_petualangan"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
