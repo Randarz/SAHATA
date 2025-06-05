@@ -173,13 +173,14 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp), // this is padding for the Box container
             contentAlignment = Alignment.TopEnd
         ) {
             Image(
                 painter = painterResource(id = settingResId),
                 contentDescription = "Setting Button",
                 modifier = Modifier
+                    .padding(top = 8.dp, end = 10.dp) // this acts like margin for the Image
                     .size(50.dp)
                     .offset { settingOffset }
                     .graphicsLayer {
@@ -206,6 +207,7 @@ fun HomeScreen(
                 painter = painterResource(id = noticeResId),
                 contentDescription = "Notice Button",
                 modifier = Modifier
+                    .padding(top = 8.dp, end = 10.dp)
                     .size(50.dp)
                     .offset { noticeOffset }
                     .graphicsLayer {

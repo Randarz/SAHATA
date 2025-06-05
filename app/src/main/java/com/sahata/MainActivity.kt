@@ -28,18 +28,15 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateTo
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.view.WindowCompat
+import android.util.Log
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -48,13 +45,14 @@ import com.sahata.TEBAKAKSARA.Level1Screen
 import com.sahata.TEBAKAKSARA.Level2Screen
 import com.sahata.TEBAKAKSARA.Level3Screen
 import com.sahata.TEBAKAKSARA.Level4Screen
+import com.sahata.TEBAKAKSARA.Level5Screen
 import com.sahata.ui.theme.SAHATATheme
 import kotlinx.coroutines.*
 
 
 class MainActivity : ComponentActivity() {
     var mediaPlayer: MediaPlayer? = null
-    var musicVolumeLevel: Int = 3 // Default music volume level (60%)
+    var musicVolumeLevel: Int = 1 // Default music volume level (60%)
     var suaraVolumeLevel: Int = 3 // Default suara volume level (60%)
     private var autoplayJob: Job? = null // Job to manage autoplay
     private lateinit var sharedPreferences: SharedPreferences // SharedPreferences instance
@@ -64,9 +62,9 @@ class MainActivity : ComponentActivity() {
         sharedPreferences = getSharedPreferences("TebakAksaraPrefs", Context.MODE_PRIVATE)
 
         // Initialize and start background music
-        mediaPlayer = MediaPlayer.create(this, R.raw.inang_u).apply {
-            isLooping = false
-            setVolume(musicVolumeLevel * 0.2f, musicVolumeLevel * 0.2f)
+        mediaPlayer = MediaPlayer.create(this, R.raw.app_sound).apply {
+            isLooping = true
+            setVolume(musicVolumeLevel * 0.1f, musicVolumeLevel * 0.1f)
             start()
         }
 
@@ -225,11 +223,14 @@ fun AppNavigation(
         }
         composable("anak") {
             AnakScreen(
-                anakBackgroundLayoutResId = R.layout.anak_background,
+                anak1LayoutResId = R.layout.anak1_background,
+                anak2LayoutResId = R.layout.anak2_background,
                 anakNextResId = R.drawable.anak_next,
+                anakBackResId = R.drawable.anak_back, // Ganti sesuai ID gambar back
                 soundEffectsVolume = soundEffectsVolume,
                 sharedPreferences = sharedPreferences,
-                onNextClick = { navController.navigate("mari_bermain") } // Correct route name
+                onNextClick = { navController.navigate("mari_bermain") },
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable("mari_bermain") { // Ensure this route exists
@@ -249,8 +250,9 @@ fun AppNavigation(
                 onLevel2Click = { navController.navigate("level2") },
                 onLevel3Click = { navController.navigate("level3") },
                 onLevel4Click = { navController.navigate("level4") },
+                onLevel5Click = { navController.navigate("level5") },
                 sharedPreferences = sharedPreferences,
-                inangBackResId = R.drawable.inang_back
+                inangBackResId = R.drawable.button_back_green
             )
         }
         composable("level1") {
@@ -279,6 +281,14 @@ fun AppNavigation(
         }
         composable("level4") {
             Level4Screen(
+                onBackClick = { navController.popBackStack() },
+                onFinishLevel = { navController.navigate("tebak_aksara_menu") },
+                sharedPreferences = sharedPreferences,
+                soundEffectsVolume = soundEffectsVolume
+            )
+        }
+        composable("level5") {
+            Level5Screen(
                 onBackClick = { navController.popBackStack() },
                 onFinishLevel = { navController.navigate("tebak_aksara_menu") },
                 sharedPreferences = sharedPreferences,
@@ -330,20 +340,24 @@ fun LoadingScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
-    val isTablet = screenWidthDp >= 600
 
+    Log.d("LoadingScreen", "screenWidthDp: $screenWidthDp")
+
+    val isTablet = remember(screenWidthDp) { screenWidthDp >= 1000 }
+
+    // Tablet vs Phone adjustments
     val actualBackgroundResId = if (isTablet) R.drawable.loading_background_tab else backgroundResId
-    val titleSize = if (isTablet) Modifier.size(width = 800.dp, height = 200.dp) else Modifier.size(width = 650.dp, height = 170.dp)
+    val titleSize = if (isTablet) Modifier.size(800.dp, 200.dp) else Modifier.size(650.dp, 170.dp)
     val frameWidth = if (isTablet) 400.dp else 300.dp
     val frameHeight = if (isTablet) 70.dp else 50.dp
     val progressBarHeight = if (isTablet) 20.dp else 14.dp
-    val verticalOffset = if (isTablet) 100.dp else 100.dp
+    val verticalOffset = if (isTablet) 100.dp else 50.dp
+    val horasHorasResId = if (isTablet) R.drawable.horashoras_tab else R.drawable.horas_horas
 
     var progress by remember { mutableStateOf(0f) }
     var showPopup by remember { mutableStateOf(false) }
     var horasPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
 
-    // PULSE ANIMATION FOR TITLE
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -351,7 +365,8 @@ fun LoadingScreen(
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        ), label = "scale"
+        ),
+        label = "scale"
     )
 
     LaunchedEffect(Unit) {
@@ -393,7 +408,7 @@ fun LoadingScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.horas_horas),
+                    painter = painterResource(id = horasHorasResId),
                     contentDescription = "Horas Notice",
                     modifier = Modifier.fillMaxSize()
                 )
@@ -416,7 +431,6 @@ fun LoadingScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Title with pulse animation
                     Image(
                         painter = painterResource(id = titleResId),
                         contentDescription = "Loading Title",
@@ -426,32 +440,28 @@ fun LoadingScreen(
                         }
                     )
 
-                    Column(
-                        modifier = Modifier.offset(y = verticalOffset),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier
+                            .offset(y = verticalOffset)
+                            .width(frameWidth)
+                            .height(frameHeight)
                     ) {
-                        Box(
+                        Image(
+                            painter = painterResource(id = frameResId),
+                            contentDescription = "Loading Bar Frame",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        LinearProgressIndicator(
+                            progress = progress,
                             modifier = Modifier
-                                .width(frameWidth)
-                                .height(frameHeight)
-                        ) {
-                            Image(
-                                painter = painterResource(id = frameResId),
-                                contentDescription = "Loading Bar Frame",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            LinearProgressIndicator(
-                                progress = progress,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.CenterStart)
-                                    .padding(horizontal = 4.5.dp, vertical = 10.dp)
-                                    .height(progressBarHeight)
-                                    .clip(shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp)),
-                                color = colorResource(id = R.color.yellowbar),
-                                backgroundColor = Color.Transparent
-                            )
-                        }
+                                .fillMaxWidth()
+                                .align(Alignment.CenterStart)
+                                .padding(horizontal = 4.5.dp, vertical = 10.dp)
+                                .height(progressBarHeight)
+                                .clip(RoundedCornerShape(6.dp)),
+                            color = colorResource(id = R.color.yellowbar),
+                            backgroundColor = Color.Transparent
+                        )
                     }
                 }
             }

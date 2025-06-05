@@ -3,9 +3,11 @@ package com.sahata.TEBAKAKSARA
 import android.content.SharedPreferences
 import android.media.MediaPlayer
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.ImageView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
@@ -13,8 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.fontResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -22,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.sahata.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun Level2Screen(
@@ -30,14 +34,20 @@ fun Level2Screen(
     sharedPreferences: SharedPreferences,
     soundEffectsVolume: Float
 ) {
+    val configuration = LocalConfiguration.current
+    val isTablet = configuration.screenWidthDp >= 1000
+
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var score by remember { mutableStateOf(0) }
     var showPopup by remember { mutableStateOf(false) }
     var isCorrect by remember { mutableStateOf(false) }
     var showFinalScorePopup by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    var showIntroImage by remember { mutableStateOf(true) }
+    var hasPlayedIntroSoalSound by remember { mutableStateOf(false) }
 
-    val correctAnswers = listOf("option2", "option4", "option1", "option2", "option4")
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val correctAnswers = listOf("option3", "option1", "option2", "option4", "option2")
     val questionLayouts = listOf(
         R.layout.lvl2_soal1,
         R.layout.lvl2_soal2,
@@ -45,19 +55,73 @@ fun Level2Screen(
         R.layout.lvl2_soal4,
         R.layout.lvl2_soal5
     )
+    val questionSounds = listOf(
+        R.raw.lvl2_soal1,
+        R.raw.lvl2_soal2,
+        R.raw.lvl2_soal3,
+        R.raw.lvl2_soal4,
+        R.raw.lvl2_soal5
+    )
 
     val MyCustomFont = FontFamily(Font(R.font.my_custom_font))
     val ScoreTotalColor = Color(0xFFFFFFFF)
+    var currentPlayer: MediaPlayer? by remember { mutableStateOf(null) }
 
-    fun playSound(resId: Int) {
-        val player = MediaPlayer.create(context, resId)
-        val reducedVolume = soundEffectsVolume * 0.2f
-        player.setVolume(reducedVolume, reducedVolume)
-        player.setOnCompletionListener { it.release() }
-        player.start()
+    fun playSound(resId: Int, fullVolume: Boolean = false, onComplete: (() -> Unit)? = null) {
+        currentPlayer?.stop()
+        currentPlayer?.release()
+        currentPlayer = MediaPlayer.create(context, resId)?.apply {
+            val volume = if (fullVolume) soundEffectsVolume else soundEffectsVolume * 0.2f
+            setVolume(volume, volume)
+            setOnCompletionListener {
+                it.release()
+                if (currentPlayer == it) currentPlayer = null
+                onComplete?.invoke()
+            }
+            start()
+        }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    LaunchedEffect(Unit) {
+        playSound(R.raw.lvl2_info, fullVolume = true)
+    }
+
+    LaunchedEffect(currentQuestionIndex) {
+        if (!showIntroImage) {
+            hasPlayedIntroSoalSound = false
+            playSound(R.raw.lvl2_soal, fullVolume = true) {
+                playSound(questionSounds[currentQuestionIndex], fullVolume = true)
+                hasPlayedIntroSoalSound = true
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(enabled = showIntroImage) {
+                if (showIntroImage) {
+                    showIntroImage = false
+                    currentPlayer?.stop()
+                    currentPlayer?.release()
+                    currentPlayer = null
+                    playSound(R.raw.lvl2_soal, fullVolume = true) {
+                        playSound(questionSounds[currentQuestionIndex], fullVolume = true)
+                        hasPlayedIntroSoalSound = true
+                    }
+                }
+            }
+    ) {
+        if (showIntroImage) {
+            Image(
+                painter = painterResource(id = if (isTablet) R.drawable.tab_info_lvl2 else R.drawable.hp_info_lvl2),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            return@Box
+        }
+
         val currentLayout = remember(currentQuestionIndex) { questionLayouts[currentQuestionIndex] }
 
         key(currentQuestionIndex) {
@@ -70,7 +134,6 @@ fun Level2Screen(
                             findViewById<ImageView>(R.id.option3),
                             findViewById<ImageView>(R.id.option4)
                         )
-
                         options.forEachIndexed { index, option ->
                             option.setOnClickListener {
                                 val selectedOption = "option${index + 1}"
@@ -84,23 +147,52 @@ fun Level2Screen(
                                 showPopup = true
                             }
                         }
+
+                        val playButton: View? = findViewById(R.id.playbutton)
+                        playButton?.setOnClickListener {
+                            playSound(questionSounds[currentQuestionIndex], fullVolume = true)
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxSize()
             )
         }
 
-        // SCORE: TOP-RIGHT CORNER
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.game_exit_red),
+                contentDescription = "Exit Game",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .width(if (isTablet) 130.dp else 90.dp)
+                    .height(if (isTablet) 64.dp else 44.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        currentPlayer?.stop()
+                        currentPlayer?.release()
+                        currentPlayer = null
+                        onBackClick()
+                    }
+            )
+        }
+
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(12.dp)
-                .width(90.dp)
-                .height(44.dp),
+                .width(if (isTablet) 130.dp else 90.dp)
+                .height(if (isTablet) 64.dp else 44.dp),
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.score_background),
+                painter = painterResource(id = R.drawable.score_background_red),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
@@ -108,7 +200,8 @@ fun Level2Screen(
             Text(
                 text = "$score",
                 fontFamily = MyCustomFont,
-                fontSize = 20.sp,
+                color = Color(0xFFFFFFFF),
+                fontSize = if (isTablet) 32.sp else 24.sp,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
@@ -119,6 +212,9 @@ fun Level2Screen(
                     .fillMaxSize()
                     .clickable {
                         showPopup = false
+                        currentPlayer?.stop()
+                        currentPlayer?.release()
+                        currentPlayer = null
                         if (currentQuestionIndex < questionLayouts.size - 1) {
                             currentQuestionIndex++
                         } else {
@@ -129,9 +225,9 @@ fun Level2Screen(
             ) {
                 Image(
                     painter = if (isCorrect) {
-                        painterResource(id = R.drawable.soal_benar)
+                        painterResource(id = if (isTablet) R.drawable.soal_benar_tab else R.drawable.soal_benar)
                     } else {
-                        painterResource(id = R.drawable.soal_salah)
+                        painterResource(id = if (isTablet) R.drawable.soal_salah_tab else R.drawable.soal_salah)
                     },
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
@@ -145,13 +241,16 @@ fun Level2Screen(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable {
+                        currentPlayer?.stop()
+                        currentPlayer?.release()
+                        currentPlayer = null
                         showFinalScorePopup = false
                         sharedPreferences.edit().putBoolean("level2Completed", true).apply()
                         onFinishLevel()
                     }
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.totalscore_background2),
+                    painter = painterResource(id = if (isTablet) R.drawable.totalscore_background2_tab else R.drawable.totalscore_background2),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -165,14 +264,14 @@ fun Level2Screen(
                     Text(
                         text = "Level 2 telah selesai",
                         fontFamily = MyCustomFont,
-                        fontSize = 22.sp,
+                        fontSize = if (isTablet) 40.sp else 30.sp,
                         color = ScoreTotalColor,
                         modifier = Modifier.padding(4.dp)
                     )
                     Text(
                         text = "Nilai Kamu : $score",
                         fontFamily = MyCustomFont,
-                        fontSize = 20.sp,
+                        fontSize = if (isTablet) 40.sp else 30.sp,
                         color = ScoreTotalColor,
                         modifier = Modifier.padding(4.dp)
                     )

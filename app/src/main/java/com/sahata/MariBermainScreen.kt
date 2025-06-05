@@ -1,5 +1,6 @@
 package com.sahata
 
+import android.annotation.SuppressLint
 import android.media.MediaPlayer
 import android.view.LayoutInflater
 import android.widget.ImageView
@@ -17,8 +18,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 
 
+@SuppressLint("UnrememberedMutableInteractionSource")
 @Composable
 fun MariBermainScreen(
     mariBackgroundLayoutResId: Int,
@@ -27,6 +30,9 @@ fun MariBermainScreen(
     onPetualanganClick: () -> Unit,
     onTebakAksaraClick: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isTablet = configuration.screenWidthDp >= 1000
+
     val context = LocalContext.current
     val mediaPlayer = remember { MediaPlayer.create(context, R.raw.button) }
     var showPopup by remember { mutableStateOf(false) }
@@ -67,15 +73,15 @@ fun MariBermainScreen(
         // Home Button
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.TopStart
+                .align(Alignment.TopStart)
+                .padding(16.dp)
         ) {
             Image(
                 painter = painterResource(id = homeButtonResId),
                 contentDescription = "Home Button",
                 modifier = Modifier
-                    .size(50.dp)
+                    .width(if (isTablet) 130.dp else 90.dp)
+                    .height(if (isTablet) 64.dp else 44.dp)
                     .clickable(
                         indication = null,
                         interactionSource = MutableInteractionSource()

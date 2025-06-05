@@ -41,7 +41,7 @@ fun BelajarScreen(
 
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
-    val isTablet = screenWidthDp >= 600
+    val isTablet = screenWidthDp >= 1000
 
     val actualBackgroundResId = if (isTablet) R.drawable.belajar_background_tab else belajarBackgroundResId
 
@@ -147,15 +147,16 @@ fun BelajarScreen(
 
             Box(
                 modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
                     .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.TopStart
             ) {
                 Image(
                     painter = painterResource(id = inangBackResId),
                     contentDescription = "Inang Back",
                     modifier = Modifier
-                        .size(50.dp)
+                        .width(if (isTablet) 130.dp else 90.dp)
+                        .height(if (isTablet) 64.dp else 44.dp)
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
@@ -177,7 +178,8 @@ fun BelajarScreen(
                     painter = painterResource(id = inangNextResId),
                     contentDescription = "Inang Next",
                     modifier = Modifier
-                        .size(50.dp)
+                        .width(if (isTablet) 130.dp else 90.dp)
+                        .height(if (isTablet) 64.dp else 44.dp)
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }

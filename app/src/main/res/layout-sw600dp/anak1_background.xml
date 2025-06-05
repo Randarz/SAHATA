@@ -1,0 +1,82 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/anak1_background_tab">
+
+    <ImageView
+        android:id="@+id/anak_si"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="20.7dp"
+        android:src="@drawable/anak_si"
+        app:layout_constraintTop_toTopOf="@id/anak_se"
+        app:layout_constraintBottom_toBottomOf="@id/anak_se"
+        app:layout_constraintEnd_toStartOf="@id/anak_su"/>
+
+    <ImageView
+        android:id="@+id/anak_su"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="20.7dp"
+        android:src="@drawable/anak_su"
+        app:layout_constraintTop_toTopOf="@id/anak_se"
+        app:layout_constraintBottom_toBottomOf="@id/anak_se"
+        app:layout_constraintEnd_toStartOf="@id/anak_se" />
+
+    <ImageView
+        android:id="@+id/anak_se"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginEnd="120dp"
+        android:layout_marginTop="333dp"
+        android:src="@drawable/anak_se"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <ImageView
+        android:id="@+id/anak_so"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="20.7dp"
+        android:src="@drawable/anak_so"
+        app:layout_constraintStart_toEndOf="@id/anak_se"
+        app:layout_constraintBottom_toBottomOf="@id/anak_se"
+        app:layout_constraintTop_toTopOf="@id/anak_se" />
+
+    <ImageView
+        android:id="@+id/anak_sang"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="20.7dp"
+        android:src="@drawable/anak_sang"
+        app:layout_constraintTop_toTopOf="@id/anak_so"
+        app:layout_constraintBottom_toBottomOf="@id/anak_so"
+        app:layout_constraintStart_toEndOf="@id/anak_so" />
+
+    <ImageView
+        android:id="@+id/anak_s"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintHeight_percent="0.22"
+        app:layout_constraintWidth_percent="0.09"
+        android:layout_marginStart="20.7dp"
+        android:src="@drawable/anak_s"
+        app:layout_constraintTop_toTopOf="@id/anak_sang"
+        app:layout_constraintBottom_toBottomOf="@id/anak_sang"
+        app:layout_constraintStart_toEndOf="@id/anak_sang" />
+    
+
+</androidx.constraintlayout.widget.ConstraintLayout>
