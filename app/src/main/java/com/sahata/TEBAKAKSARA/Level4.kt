@@ -40,6 +40,9 @@ fun Level4Screen(
     var isCorrect by remember { mutableStateOf(false) }
     var showFinalScorePopup by remember { mutableStateOf(false) }
     var showIntroImage by remember { mutableStateOf(true) }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var isPrepared by remember { mutableStateOf(false) }
+
 
     val context = LocalContext.current
     val correctAnswers = listOf("option2", "option4", "option2", "option3", "option1")
@@ -71,8 +74,29 @@ fun Level4Screen(
             setOnCompletionListener {
                 it.release()
                 if (currentPlayer == it) currentPlayer = null
+                isPrepared = false
             }
+            isPrepared = true
             start()
+        }
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onPause(owner: androidx.lifecycle.LifecycleOwner) {
+                currentPlayer?.pause()
+            }
+
+            override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                if (isPrepared) {
+                    currentPlayer?.start()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            currentPlayer?.release()
+            currentPlayer = null
         }
     }
 

@@ -6,6 +6,7 @@ import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -36,57 +37,40 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.util.Log
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.sahata.TEBAKAKSARA.Level1Screen
-import com.sahata.TEBAKAKSARA.Level2Screen
-import com.sahata.TEBAKAKSARA.Level3Screen
-import com.sahata.TEBAKAKSARA.Level4Screen
-import com.sahata.TEBAKAKSARA.Level5Screen
+import com.sahata.TEBAKAKSARA.*
 import com.sahata.ui.theme.SAHATATheme
 import kotlinx.coroutines.*
 
-
 class MainActivity : ComponentActivity() {
-    var mediaPlayer: MediaPlayer? = null
-    var musicVolumeLevel: Int = 1 // Default music volume level (60%)
-    var suaraVolumeLevel: Int = 3 // Default suara volume level (60%)
-    private var autoplayJob: Job? = null // Job to manage autoplay
-    private lateinit var sharedPreferences: SharedPreferences // SharedPreferences instance
+
+    var musicVolumeLevel: Int = 1
+    var suaraVolumeLevel: Int = 3
+    private var autoplayJob: Job? = null
+    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         sharedPreferences = getSharedPreferences("TebakAksaraPrefs", Context.MODE_PRIVATE)
 
-        // Initialize and start background music
-        mediaPlayer = MediaPlayer.create(this, R.raw.app_sound).apply {
+        // Setup global MusicController
+        MusicController.mediaPlayer = MediaPlayer.create(this, R.raw.app_sound).apply {
             isLooping = true
             setVolume(musicVolumeLevel * 0.1f, musicVolumeLevel * 0.1f)
             start()
         }
 
-        // Start autoplay logic
         startAutoplay()
 
-        // Postpone immersive mode setup until the decor view is ready
-        window.decorView.post {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                window.insetsController?.apply {
-                    hide(android.view.WindowInsets.Type.systemBars())
-                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                window.decorView.systemUiVisibility = (
-                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        )
-            }
-        }
+        // Apply immersive fullscreen here
+        enableImmersiveMode()
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -103,7 +87,6 @@ class MainActivity : ComponentActivity() {
                         soundEffectsVolume = suaraVolumeLevel * 0.2f
                     },
                     soundEffectsVolume = soundEffectsVolume,
-                    onPlaySoundEffect = { playButtonSound(this, soundEffectsVolume) },
                     sharedPreferences = sharedPreferences
                 )
             }
@@ -113,44 +96,43 @@ class MainActivity : ComponentActivity() {
     private fun startAutoplay() {
         autoplayJob = CoroutineScope(Dispatchers.Main).launch {
             while (isActive) {
-                // Add your autoplay logic here
-                delay(1000) // Example delay for autoplay
+                delay(1000)
             }
         }
     }
 
     fun updateMusicVolumeLevel(level: Int) {
-        musicVolumeLevel = level.coerceIn(0, 5) // Ensure volume level is between 0 and 5
-        val volume = musicVolumeLevel * 0.2f
-        mediaPlayer?.setVolume(volume, volume)
+        musicVolumeLevel = level.coerceIn(0, 5)
+        MusicController.updateMusicVolume(level)
     }
 
     override fun onPause() {
         super.onPause()
-        // Pause the music when the app is not in the foreground
-        mediaPlayer?.pause()
-
-        // Cancel autoplay
+        MusicController.pauseMusic()
         autoplayJob?.cancel()
     }
 
     override fun onResume() {
         super.onResume()
-        // Resume the music when the app comes back to the foreground
-        mediaPlayer?.start()
-
-        // Restart autoplay
+        MusicController.startMusic()
         startAutoplay()
+
+        // re-apply immersive fullscreen on resume!
+        enableImmersiveMode()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Release MediaPlayer resources
-        mediaPlayer?.release()
-        mediaPlayer = null
-
-        // Cancel autoplay
+        MusicController.release()
         autoplayJob?.cancel()
+    }
+
+    // Immersive mode function centralized
+    private fun enableImmersiveMode() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 }
 
@@ -161,16 +143,13 @@ fun AppNavigation(
     getSuaraVolumeLevel: () -> Int,
     setSuaraVolumeLevel: (Int) -> Unit,
     soundEffectsVolume: Float,
-    onPlaySoundEffect: () -> Unit,
     sharedPreferences: SharedPreferences
-
-)
-{
+) {
     val navController = rememberNavController()
-    var isLoadingComplete by remember { mutableStateOf(false)
-    }
+    var isLoadingComplete by remember { mutableStateOf(false) }
 
     NavHost(navController = navController, startDestination = if (isLoadingComplete) "home" else "loading") {
+
         composable("loading") {
             LoadingScreen(
                 backgroundResId = R.drawable.loading_background,
@@ -180,7 +159,11 @@ fun AppNavigation(
                 soundEffectsVolume = soundEffectsVolume
             )
         }
+
         composable("home") {
+            LaunchedEffect(Unit) {
+                MusicController.startMusic()
+            }
             HomeScreen(
                 backgroundResId = R.drawable.home_background,
                 settingResId = R.drawable.home_setting,
@@ -188,16 +171,12 @@ fun AppNavigation(
                 onSettingClick = { navController.navigate("setting") },
                 onNoticeClick = { navController.navigate("notice") },
                 onBelajarClick = { navController.navigate("belajar") },
-                onBermainClick = { navController.navigate("mari_bermain") },
+                onBermainClick = { navController.navigate("tebak_aksara_menu") },
                 sharedPreferences = sharedPreferences,
                 soundEffectsVolume = soundEffectsVolume
             )
-            BackHandler {
-                navController.navigate("exit") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
         }
+
         composable("setting") {
             SettingScreen(
                 getMusicVolumeLevel = getMusicVolumeLevel,
@@ -210,26 +189,32 @@ fun AppNavigation(
             )
         }
         composable("belajar") {
+            // Pause music BEFORE composable is launched
+            LaunchedEffect(Unit) { MusicController.pauseMusic() }
+
             BelajarScreen(
                 belajarBackgroundResId = R.drawable.belajar_background,
                 belajarNoticeResId = R.drawable.belajar_notice,
                 inangBackgroundLayoutResId = R.layout.inang_background,
                 inangBackResId = R.drawable.inang_back,
                 inangNextResId = R.drawable.inang_next,
+                soundEffectsVolume = soundEffectsVolume,
                 onBackClick = { navController.popBackStack() },
-                onNextClick = { navController.navigate("anak") }, // Navigate to AnakScreen
-                soundEffectsVolume = soundEffectsVolume
+                onNextClick = { navController.navigate("anak") }
             )
         }
         composable("anak") {
+            // Pause music BEFORE composable is launched
+            LaunchedEffect(Unit) { MusicController.pauseMusic() }
+
             AnakScreen(
                 anak1LayoutResId = R.layout.anak1_background,
                 anak2LayoutResId = R.layout.anak2_background,
                 anakNextResId = R.drawable.anak_next,
-                anakBackResId = R.drawable.anak_back, // Ganti sesuai ID gambar back
+                anakBackResId = R.drawable.anak_back,
                 soundEffectsVolume = soundEffectsVolume,
                 sharedPreferences = sharedPreferences,
-                onNextClick = { navController.navigate("mari_bermain") },
+                onNextClick = { navController.navigate("home") },
                 onBackClick = { navController.popBackStack() }
             )
         }
@@ -243,16 +228,19 @@ fun AppNavigation(
             )
         }
         composable("tebak_aksara_menu") {
+            LaunchedEffect(Unit) {
+                MusicController.startMusic()
+            }
             TebakAksaraMenuScreen(
                 tebakMenuLayoutResId = R.layout.tebakmenu,
-                onBackClick = { navController.navigate("mari_bermain") }, // Navigate to MariBermainScreen
+                onBackClick = { navController.navigate("home") }, // Navigate to MariBermainScreen
                 onLevel1Click = { navController.navigate("level1") },
                 onLevel2Click = { navController.navigate("level2") },
                 onLevel3Click = { navController.navigate("level3") },
                 onLevel4Click = { navController.navigate("level4") },
                 onLevel5Click = { navController.navigate("level5") },
                 sharedPreferences = sharedPreferences,
-                inangBackResId = R.drawable.button_back_green
+                inangBackResId = R.drawable.bermain_home
             )
         }
         composable("level1") {

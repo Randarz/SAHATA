@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sahata.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,10 +45,12 @@ fun Level2Screen(
     var showFinalScorePopup by remember { mutableStateOf(false) }
     var showIntroImage by remember { mutableStateOf(true) }
     var hasPlayedIntroSoalSound by remember { mutableStateOf(false) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isPrepared by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val correctAnswers = listOf("option3", "option1", "option2", "option4", "option2")
+    val correctAnswers = listOf("option2", "option3", "option3", "option4", "option3")
     val questionLayouts = listOf(
         R.layout.lvl2_soal1,
         R.layout.lvl2_soal2,
@@ -76,11 +79,37 @@ fun Level2Screen(
             setOnCompletionListener {
                 it.release()
                 if (currentPlayer == it) currentPlayer = null
+                isPrepared = false
                 onComplete?.invoke()
             }
+            isPrepared = true
             start()
         }
     }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onPause(owner: androidx.lifecycle.LifecycleOwner) {
+                currentPlayer?.pause()
+            }
+            override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                if (isPrepared) {
+                    currentPlayer?.start()
+                }
+            }
+            override fun onDestroy(owner: androidx.lifecycle.LifecycleOwner) {
+                currentPlayer?.release()
+                currentPlayer = null
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            currentPlayer?.release()
+            currentPlayer = null
+        }
+    }
+
 
     LaunchedEffect(Unit) {
         playSound(R.raw.lvl2_info, fullVolume = true)

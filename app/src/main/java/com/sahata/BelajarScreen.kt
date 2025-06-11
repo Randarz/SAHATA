@@ -1,5 +1,6 @@
 package com.sahata
 
+import android.media.MediaPlayer
 import android.view.LayoutInflater
 import android.widget.ImageView
 import androidx.compose.foundation.Image
@@ -11,13 +12,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.launch
+import androidx.compose.animation.core.*
 
 @Composable
 fun BelajarScreen(
@@ -30,20 +35,41 @@ fun BelajarScreen(
     onBackClick: () -> Unit,
     onNextClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
+    // 🔊 Sound effect function for button click
+    fun playButtonSound() {
+        val player = MediaPlayer.create(context, R.raw.button)
+        player.setVolume(soundEffectsVolume, soundEffectsVolume)
+        player.setOnCompletionListener { it.release() }
+        player.start()
+    }
+
+    // 🔄 Infinite scale animation for button pulse
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scaleAnim by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale"
+    )
+
     val currentVolume by rememberUpdatedState(soundEffectsVolume)
     var showNotice by remember { mutableStateOf(true) }
     val coroutineScope = rememberCoroutineScope()
     var isAutoplaying by remember { mutableStateOf(false) }
     var wasAutoplayingBeforePause by remember { mutableStateOf(false) }
     var showMulaianakPopup by remember { mutableStateOf(false) }
-
     val lifecycleOwner = LocalLifecycleOwner.current
-
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
     val isTablet = screenWidthDp >= 1000
-
     val actualBackgroundResId = if (isTablet) R.drawable.belajar_background_tab else belajarBackgroundResId
+
+    LaunchedEffect(Unit) { MusicController.pauseMusic() }
 
     DisposableEffect(lifecycleOwner) {
         val observer = object : DefaultLifecycleObserver {
@@ -54,8 +80,8 @@ fun BelajarScreen(
                     isAutoplaying = false
                 }
             }
-
             override fun onResume(owner: LifecycleOwner) {
+                MusicController.pauseMusic() // keep paused after resume
                 if (wasAutoplayingBeforePause) {
                     wasAutoplayingBeforePause = false
                     isAutoplaying = true
@@ -68,31 +94,21 @@ fun BelajarScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         if (showNotice) {
             Image(
                 painter = painterResource(id = actualBackgroundResId),
-                contentDescription = "Belajar Background",
+                contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val noticeSize = if (isTablet) 650.dp else 500.dp
                 Image(
                     painter = painterResource(id = belajarNoticeResId),
-                    contentDescription = "Belajar Notice",
+                    contentDescription = null,
                     modifier = Modifier
                         .size(noticeSize)
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ) { showNotice = false }
+                        .clickable { showNotice = false }
                 )
             }
         } else {
@@ -145,22 +161,25 @@ fun BelajarScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
+            // BACK BUTTON with animation + sound effect
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .fillMaxSize()
+                modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
             ) {
                 Image(
                     painter = painterResource(id = inangBackResId),
-                    contentDescription = "Inang Back",
+                    contentDescription = null,
                     modifier = Modifier
                         .width(if (isTablet) 130.dp else 90.dp)
                         .height(if (isTablet) 64.dp else 44.dp)
+                        .graphicsLayer {
+                            scaleX = scaleAnim
+                            scaleY = scaleAnim
+                        }
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
+                            playButtonSound()
                             stopAutoplay(coroutineScope)
                             isAutoplaying = false
                             onBackClick()
@@ -168,22 +187,25 @@ fun BelajarScreen(
                 )
             }
 
+            // NEXT BUTTON with animation + sound effect
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.TopEnd
+                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
             ) {
                 Image(
                     painter = painterResource(id = inangNextResId),
-                    contentDescription = "Inang Next",
+                    contentDescription = null,
                     modifier = Modifier
                         .width(if (isTablet) 130.dp else 90.dp)
                         .height(if (isTablet) 64.dp else 44.dp)
+                        .graphicsLayer {
+                            scaleX = scaleAnim
+                            scaleY = scaleAnim
+                        }
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
+                            playButtonSound()
                             stopAutoplay(coroutineScope)
                             isAutoplaying = false
                             showMulaianakPopup = true
@@ -192,23 +214,20 @@ fun BelajarScreen(
             }
         }
 
+        // Popup for starting AnakScreen
         if (showMulaianakPopup) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.8f))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) {
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f))
+                    .clickable {
                         showMulaianakPopup = false
+                        MusicController.pauseMusic()
                         onNextClick()
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.new_mulaianak),
-                    contentDescription = "Mulai Anak",
+                    contentDescription = null,
                     modifier = Modifier.fillMaxSize()
                 )
             }

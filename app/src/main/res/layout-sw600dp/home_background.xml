@@ -26,7 +26,7 @@
         app:layout_constraintHeight_percent="0.1"
         app:layout_constraintWidth_percent="0.22"
         android:layout_marginTop="30dp"
-        android:src="@drawable/home_bermain"
+        android:src="@drawable/button_latihan"
         app:layout_constraintTop_toBottomOf="@id/belajar_button"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

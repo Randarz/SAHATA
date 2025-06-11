@@ -1,7 +1,7 @@
 package com.sahata
 
-import android.animation.ObjectAnimator
 import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Context
 import android.media.MediaPlayer
 import android.view.View

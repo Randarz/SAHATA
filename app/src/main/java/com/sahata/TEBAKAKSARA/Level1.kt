@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.sahata.R
 
 @Composable
@@ -40,6 +41,8 @@ fun Level1Screen(
     var isCorrect by remember { mutableStateOf(false) }
     var showFinalScorePopup by remember { mutableStateOf(false) }
     var showIntroImage by remember { mutableStateOf(true) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isPrepared by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val correctAnswers = listOf("option2", "option3", "option3", "option4", "option3")
@@ -64,10 +67,36 @@ fun Level1Screen(
             setOnCompletionListener {
                 it.release()
                 if (currentPlayer == it) currentPlayer = null
+                isPrepared = false
             }
+            isPrepared = true
             start()
         }
     }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onPause(owner: androidx.lifecycle.LifecycleOwner) {
+                currentPlayer?.pause()
+            }
+            override fun onResume(owner: androidx.lifecycle.LifecycleOwner) {
+                if (isPrepared) {
+                    currentPlayer?.start()
+                }
+            }
+            override fun onDestroy(owner: androidx.lifecycle.LifecycleOwner) {
+                currentPlayer?.release()
+                currentPlayer = null
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            currentPlayer?.release()
+            currentPlayer = null
+        }
+    }
+
 
     LaunchedEffect(Unit) {
         playSound(R.raw.lvl1_info)
